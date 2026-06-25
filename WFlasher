@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-VoidRecon Firmware(v0.1.0-beta.1) Flasher
+Firmware Flasher
 """
 
 import os
