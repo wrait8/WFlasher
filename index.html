@@ -275,26 +275,17 @@
             gap: 1.5rem;
         }
 
-        .port-select-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .port-select-wrapper select {
-            flex: 1;
-        }
-
         .connect-btn {
-            padding: 0.6rem 1.5rem;
+            width: 100%;
+            padding: 0.8rem 1rem;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #ffffff;
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.9rem;
-            white-space: nowrap;
+            font-size: 0.95rem;
+            text-align: center;
         }
 
         .connect-btn:hover:not(:disabled) {
@@ -393,12 +384,12 @@
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.04);
             padding: 1rem;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             font-family: 'Space Mono', monospace;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             line-height: 1.6;
-            color: rgba(200, 210, 215, 0.6);
+            color: rgba(200, 210, 215, 0.7);
             display: none;
         }
 
@@ -430,6 +421,11 @@
 
         .log-output .log-line.info {
             color: rgba(200, 210, 215, 0.7);
+        }
+
+        .log-output .log-line.raw {
+            color: rgba(200, 210, 215, 0.4);
+            font-size: 0.7rem;
         }
 
         .log-output::-webkit-scrollbar {
@@ -616,8 +612,8 @@
             flex-wrap: wrap;
             padding: 8px 10px;
             background: rgba(255, 255, 255, 0.02);
-            border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0px;
         }
 
         .multi-file-row .file-label {
@@ -647,6 +643,7 @@
             border: 1px solid rgba(255, 255, 255, 0.06);
             color: #f0f5f5;
             outline: none;
+            border-radius: 0px;
         }
 
         .multi-file-row .addr-input:focus {
@@ -662,6 +659,7 @@
             color: #ff6b6b;
             cursor: pointer;
             transition: all 0.3s ease;
+            border-radius: 0px;
         }
 
         .multi-file-row .remove-row:hover {
@@ -672,7 +670,7 @@
             padding: 7px 12px;
             min-height: 32px;
             font-size: 12px;
-            border-radius: 10px;
+            border-radius: 0px;
         }
 
         .btn-secondary {
@@ -725,16 +723,6 @@
             }
             .back-link {
                 font-size: 0.7rem;
-            }
-            .connect-btn {
-                width: 100%;
-                margin-left: 0;
-                margin-top: 0.5rem;
-                text-align: center;
-            }
-            .port-select-wrapper {
-                flex-direction: column;
-                align-items: stretch;
             }
             .btn-row {
                 flex-direction: column;
@@ -805,7 +793,7 @@
                 </div>
 
                 <div class="browser-warning" id="browserWarning">
-                    ⚠️ <span class="highlight">Web Serial API</span> not supported in this browser.<br />
+                    <span class="highlight">Web Serial API</span> not supported in this browser.<br />
                     Please use <span class="highlight">Chrome 89+</span>, <span class="highlight">Edge 89+</span>, or <span class="highlight">Opera 75+</span>.
                 </div>
 
@@ -820,13 +808,8 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>port</label>
-                        <div class="port-select-wrapper">
-                            <select id="portSelect">
-                                <option value="">Select port...</option>
-                            </select>
-                            <button class="connect-btn" id="connectBtn">🔌 Connect</button>
-                        </div>
+                        <label>connection</label>
+                        <button class="connect-btn" id="connectBtn">Connect</button>
                     </div>
                     <div class="form-group">
                         <label>baud rate</label>
@@ -871,7 +854,7 @@
                     <div id="multiFileContainer" class="multi-file-container"></div>
                     <div style="display:flex; gap:0.8rem; margin-top:0.8rem; flex-wrap:wrap;">
                         <button id="addMultiFileBtn" class="btn-secondary btn-small">+ Add file + address</button>
-                        <button id="flashAllMultiBtn" class="btn-secondary btn-small">📦 Flash all</button>
+                        <button id="flashAllMultiBtn" class="btn-secondary btn-small">Flash all</button>
                     </div>
                     <div style="font-size:0.7rem; color:rgba(200,210,215,0.3); margin-top:0.5rem;">
                         Standard addresses: bootloader → 0x1000, partition → 0x8000, app → 0x10000
@@ -890,18 +873,18 @@
                 <div class="btn-row">
                     <button class="btn-flash" id="flashBtn" disabled>
                         <span class="spinner"></span>
-                        <span class="btn-text">⚡ Flash</span>
+                        <span class="btn-text">Flash</span>
                     </button>
                     <button class="btn-erase" id="eraseBtn" disabled>
                         <span class="spinner"></span>
-                        <span class="btn-text">🗑️ Erase Flash</span>
+                        <span class="btn-text">Erase Flash</span>
                     </button>
                 </div>
             </div>
         </section>
 
         <footer class="footer">
-            <span class="footer-text">⚡ WRAITH · open‑source hacking tools</span>
+            <span class="footer-text">WRAITH · open-source hacking tools</span>
         </footer>
     </div>
 
@@ -919,7 +902,6 @@
         // DOM elements
         const firmwareInput = document.getElementById('firmwareFile');
         const fileName = document.getElementById('fileName');
-        const portSelect = document.getElementById('portSelect');
         const baudSelect = document.getElementById('baudSelect');
         const flashAddress = document.getElementById('flashAddress');
         const flashBtn = document.getElementById('flashBtn');
@@ -948,7 +930,7 @@
         if (!('serial' in navigator)) {
             browserWarning.classList.add('active');
             connectBtn.disabled = true;
-            connectBtn.textContent = '⚠️ Not Supported';
+            connectBtn.textContent = 'Not Supported';
         }
 
         // File input handler
@@ -956,7 +938,7 @@
             if (this.files.length > 0) {
                 selectedFile = this.files[0];
                 fileName.textContent = selectedFile.name;
-                updateStatus('ready', '● ready');
+                updateStatus('ready', 'ready');
                 checkReady();
             } else {
                 selectedFile = null;
@@ -974,12 +956,22 @@
             }
         });
 
-        // Logging
+        // Logging - shows all serial responses
         function addLog(message, type = 'info') {
             const timestamp = new Date().toLocaleTimeString();
             const logLine = document.createElement('div');
             logLine.className = 'log-line ' + type;
             logLine.innerHTML = '<span class="timestamp">[' + timestamp + ']</span>' + message;
+            logOutput.appendChild(logLine);
+            logOutput.scrollTop = logOutput.scrollHeight;
+            logOutput.classList.add('active');
+        }
+
+        function addRawLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logLine = document.createElement('div');
+            logLine.className = 'log-line raw';
+            logLine.innerHTML = '<span class="timestamp">[' + timestamp + ']</span> ' + message;
             logOutput.appendChild(logLine);
             logOutput.scrollTop = logOutput.scrollHeight;
             logOutput.classList.add('active');
@@ -1029,57 +1021,52 @@
             }
         }
 
-        // Hint for common errors
-        function hintForError(err) {
-            const name = err?.name || "";
-            const msg = (err?.message || "").toLowerCase();
-
-            if (name === "NotFoundError") return "No port selected (the chooser was closed).";
-            if (name === "NotAllowedError") return "Permission denied. Click the address-bar serial icon to manage permissions and try again.";
-            if (name === "SecurityError") return "WebSerial requires HTTPS or http://localhost (file:// won't work).";
-            if (name === "InvalidStateError") return "Port is already open. Close the serial console or any other app using the COM port and retry.";
-            if (msg.includes("timed out") || msg.includes("timeout")) {
-                return "Timeout talking to the bootloader. Try holding BOOT while clicking Connect, or press RESET when prompted.";
-            }
-            return "";
-        }
-
-        // ========= CONNECTION - EXACTLY FROM YOUR WORKING CODE =========
+        // Connect to serial port
         async function connectSerial() {
             let selectedPort = null;
             try {
-                // Request a port
+                addLog('Requesting serial port...', 'info');
                 selectedPort = await navigator.serial.requestPort();
-                addLog('Port selected', 'info');
+                addLog('Port selected: ' + (selectedPort.getInfo ? JSON.stringify(selectedPort.getInfo()) : 'unknown'), 'info');
 
-                // Create transport and ESPLoader - EXACT match to working code
                 transport = new Transport(selectedPort);
                 esploader = new ESPLoader({
                     transport: transport,
                     baudrate: 115200,
                     romBaudrate: 115200,
-                    enableTracing: false,
+                    enableTracing: true,
                 });
 
-                addLog('Connecting to chip…', 'info');
-                updateStatus('flashing', '● connecting...');
+                addLog('Connecting to chip...', 'info');
+                updateStatus('flashing', 'connecting...');
 
-                // This is the key - just main() like your working code
+                // Enable logging from esptool
+                const originalConsoleLog = console.log;
+                console.log = function(...args) {
+                    const msg = args.join(' ');
+                    if (msg.includes('ESP-ROM') || msg.includes('rst:') || msg.includes('ets')) {
+                        addRawLog(msg);
+                    }
+                    originalConsoleLog.apply(console, args);
+                };
+
                 await esploader.main();
+                
+                // Restore console.log
+                console.log = originalConsoleLog;
                 
                 isConnected = true;
                 port = selectedPort;
-                connectBtn.textContent = '🔌 Disconnect';
+                connectBtn.textContent = 'Disconnect';
                 connectBtn.classList.add('connected');
-                updateStatus('ready', '● connected');
+                updateStatus('ready', 'connected');
                 addLog('Connected to device', 'success');
 
-                // Get chip info - same as working code
+                // Get chip info
                 try {
                     const chipFamily = esploader.chip.CHIP_NAME || 'ESP';
                     document.getElementById('chipType').textContent = chipFamily;
                     
-                    // Try to get flash size
                     try {
                         await esploader.detectFlashSize();
                         const sizeBytes = await esploader.flashSizeBytes();
@@ -1093,30 +1080,26 @@
                     document.getElementById('crystalFreq').textContent = '40MHz';
                     
                     deviceInfo.classList.add('active');
-                    addLog(`✅ Detected ${chipFamily}`, 'success');
-                    updateStatus('ready', '● ready');
+                    addLog('Detected ' + chipFamily, 'success');
+                    updateStatus('ready', 'ready');
                 } catch (error) {
-                    addLog(`⚠️ Detection warning: ${error.message}`, 'warning');
-                    updateStatus('ready', '● connected (limited)');
+                    addLog('Detection warning: ' + error.message, 'warning');
+                    updateStatus('ready', 'connected (limited)');
                 }
 
                 checkReady();
 
             } catch (error) {
                 console.error('Connection error:', error);
-                const msg = formatError(error);
-                const hint = hintForError(error);
-                addLog(`❌ Failed to connect: ${msg}`, 'error');
-                if (hint) addLog(`💡 ${hint}`, 'warning');
-                updateStatus('error', '● error');
+                addLog('Failed to connect: ' + formatError(error), 'error');
+                updateStatus('error', 'error');
                 isConnected = false;
-                connectBtn.textContent = '🔌 Connect';
+                connectBtn.textContent = 'Connect';
                 connectBtn.classList.remove('connected');
                 port = null;
                 transport = null;
                 esploader = null;
                 
-                // Clean up
                 try {
                     if (selectedPort && selectedPort.readable) {
                         await selectedPort.close();
@@ -1146,10 +1129,10 @@
             }
 
             isConnected = false;
-            connectBtn.textContent = '🔌 Connect';
+            connectBtn.textContent = 'Connect';
             connectBtn.classList.remove('connected');
-            updateStatus('disconnected', '● disconnected');
-            addLog('🔌 Disconnected from device', 'info');
+            updateStatus('disconnected', 'disconnected');
+            addLog('Disconnected from device', 'info');
             deviceInfo.classList.remove('active');
             resetProgress();
             checkReady();
@@ -1159,7 +1142,7 @@
             esploader = null;
         }
 
-        // Flash firmware using esptool-js
+        // Flash firmware
         async function flashESP32() {
             if (isFlashing || !isConnected || !selectedFile) return;
             
@@ -1168,28 +1151,24 @@
             eraseBtn.disabled = true;
             flashBtn.classList.add('loading');
             clearLog();
-            updateStatus('flashing', '● flashing...');
+            updateStatus('flashing', 'flashing...');
             resetProgress();
 
             try {
-                addLog(`📁 File: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(2)} KB)`, 'info');
-                addLog(`📍 Address: ${flashAddress.value || '0x1000'}`, 'info');
+                addLog('File: ' + selectedFile.name + ' (' + (selectedFile.size / 1024).toFixed(2) + ' KB)', 'info');
+                addLog('Address: ' + flashAddress.value || '0x1000', 'info');
                 
-                // Read file
                 const buffer = await selectedFile.arrayBuffer();
                 const data = new Uint8Array(buffer);
                 
-                // Convert to string for esptool-js
                 let binStr = '';
                 for (let i = 0; i < data.length; i++) {
                     binStr += String.fromCharCode(data[i]);
                 }
 
-                // Parse address
                 const addr = parseInt(flashAddress.value || '0x1000', 16);
 
-                // Flash the firmware
-                addLog('📤 Flashing firmware...', 'info');
+                addLog('Flashing firmware...', 'info');
                 
                 await esploader.writeFlash({
                     fileArray: [{
@@ -1205,27 +1184,25 @@
                         const percent = Math.floor((written / total) * 100);
                         updateProgress(percent);
                         if (percent % 10 === 0 && percent > 0) {
-                            addLog(`📊 Progress: ${percent}%`, 'info');
+                            addLog('Progress: ' + percent + '%', 'info');
                         }
                     }
                 });
 
-                // Reset device
-                addLog('🔄 Resetting device...', 'info');
+                addLog('Resetting device...', 'info');
                 try {
                     await esploader.after('hard_reset');
                 } catch (e) {
-                    addLog('⚠️ Reset warning: ' + e.message, 'warning');
+                    addLog('Reset warning: ' + e.message, 'warning');
                 }
 
                 updateProgress(100);
-                addLog('✅ Flash completed successfully!', 'success');
-                updateStatus('success', '✓ success');
+                addLog('Flash completed successfully!', 'success');
+                updateStatus('success', 'success');
 
             } catch (error) {
-                const msg = formatError(error);
-                addLog(`❌ Flash error: ${msg}`, 'error');
-                updateStatus('error', '● error');
+                addLog('Flash error: ' + formatError(error), 'error');
+                updateStatus('error', 'error');
             } finally {
                 isFlashing = false;
                 flashBtn.classList.remove('loading');
@@ -1233,7 +1210,7 @@
             }
         }
 
-        // Erase flash using esptool-js
+        // Erase flash
         async function eraseESP32() {
             if (isFlashing || !isConnected) return;
             
@@ -1242,29 +1219,27 @@
             eraseBtn.disabled = true;
             eraseBtn.classList.add('loading');
             clearLog();
-            updateStatus('flashing', '● erasing...');
+            updateStatus('flashing', 'erasing...');
             resetProgress();
 
             try {
-                addLog('🗑️ Erasing flash... (this may take a moment)', 'warning');
+                addLog('Erasing flash... (this may take a moment)', 'warning');
                 
                 await esploader.eraseFlash();
 
-                // Reset device
-                addLog('🔄 Resetting device...', 'info');
+                addLog('Resetting device...', 'info');
                 try {
                     await esploader.after('hard_reset');
                 } catch (e) {
-                    addLog('⚠️ Reset warning: ' + e.message, 'warning');
+                    addLog('Reset warning: ' + e.message, 'warning');
                 }
 
-                addLog('✅ Flash erased successfully!', 'success');
-                updateStatus('success', '✓ erased');
+                addLog('Flash erased successfully!', 'success');
+                updateStatus('success', 'erased');
 
             } catch (error) {
-                const msg = formatError(error);
-                addLog(`❌ Erase error: ${msg}`, 'error');
-                updateStatus('error', '● error');
+                addLog('Erase error: ' + formatError(error), 'error');
+                updateStatus('error', 'error');
             } finally {
                 isFlashing = false;
                 eraseBtn.classList.remove('loading');
@@ -1312,7 +1287,7 @@
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
             removeBtn.className = 'remove-row';
-            removeBtn.textContent = '✕';
+            removeBtn.textContent = 'x';
             removeBtn.addEventListener('click', () => {
                 row.remove();
                 updateMultiFileEntries();
@@ -1357,9 +1332,9 @@
             const flashMode = 'keep';
             const flashFreq = 'keep';
             
-            updateStatus('flashing', '● flashing...');
+            updateStatus('flashing', 'flashing...');
             updateProgress(2);
-            addLog(`📦 Starting multi-file flash (${entries.length} file(s))...`, 'info');
+            addLog('Starting multi-file flash (' + entries.length + ' file(s))...', 'info');
             
             const sorted = [...entries].sort((a, b) => a.address - b.address);
             const fileArray = [];
@@ -1373,7 +1348,7 @@
                     binStr += String.fromCharCode(uint8[j]);
                 }
                 fileArray.push({ data: binStr, address });
-                addLog(`  [${i}] 0x${address.toString(16)} (${file.name})`, 'info');
+                addLog('  [' + i + '] 0x' + address.toString(16) + ' (' + file.name + ')', 'info');
             }
             
             try {
@@ -1388,23 +1363,22 @@
                         const pct = Math.floor((written / total) * 100);
                         updateProgress(pct);
                         if (pct % 10 === 0 && pct > 0) {
-                            addLog(`📊 Progress: ${pct}%`, 'info');
+                            addLog('Progress: ' + pct + '%', 'info');
                         }
                     }
                 });
                 
                 updateProgress(100);
-                addLog('✅ Multi-file flash completed successfully!', 'success');
-                updateStatus('success', '✓ success');
+                addLog('Multi-file flash completed successfully!', 'success');
+                updateStatus('success', 'success');
                 
                 try {
                     await esploader.after('hard_reset');
                 } catch (e) {}
                 
             } catch (error) {
-                const msg = formatError(error);
-                addLog(`❌ Multi-file flash error: ${msg}`, 'error');
-                updateStatus('error', '● error');
+                addLog('Multi-file flash error: ' + formatError(error), 'error');
+                updateStatus('error', 'error');
                 throw error;
             }
         }
@@ -1430,7 +1404,6 @@
                 return;
             }
             
-            // Check all rows have files
             const missing = entries.filter((e) => !e.file);
             if (missing.length > 0) {
                 alert('Each row must have a .bin file selected.');
@@ -1442,8 +1415,8 @@
                 return;
             }
             
-            const confirmMsg = `Flash ${entries.length} file(s):\n\n` +
-                entries.map((e, i) => `  ${i+1}. 0x${e.address.toString(16)}  ${e.file.name}`).join('\n') +
+            const confirmMsg = 'Flash ' + entries.length + ' file(s):\n\n' +
+                entries.map((e, i) => '  ' + (i+1) + '. 0x' + e.address.toString(16) + '  ' + e.file.name).join('\n') +
                 '\n\nProceed?';
             
             if (!confirm(confirmMsg)) return;
@@ -1504,11 +1477,11 @@
                 firmwareInput.files = files;
                 selectedFile = files[0];
                 fileName.textContent = selectedFile.name;
-                addLog(`📁 Dropped file: ${selectedFile.name}`, 'info');
-                updateStatus('ready', '● ready');
+                addLog('Dropped file: ' + selectedFile.name, 'info');
+                updateStatus('ready', 'ready');
                 checkReady();
             } else {
-                addLog('❌ Please drop a .bin firmware file', 'error');
+                addLog('Please drop a .bin firmware file', 'error');
             }
         });
 
@@ -1518,17 +1491,16 @@
         addMultiFileRow('0x10000');
 
         // Initial status
-        updateStatus('disconnected', '● disconnected');
-        addLog('⚡ WRAITH ESP Flasher ready', 'info');
-        addLog('📌 Hold BOOT button on ESP32 before connecting', 'warning');
-        addLog('🔌 Click Connect and select your device', 'info');
-        addLog('📁 Select a .bin firmware file to flash', 'info');
-        addLog('📦 Or use multi-file flash for bootloader + partition + app', 'info');
+        updateStatus('disconnected', 'disconnected');
+        addLog('WRAITH ESP Flasher ready', 'info');
+        addLog('Hold BOOT button on ESP32 before connecting', 'warning');
+        addLog('Click Connect and select your device', 'info');
+        addLog('Select a .bin firmware file to flash', 'info');
+        addLog('Or use multi-file flash for bootloader + partition + app', 'info');
 
-        console.log('⚡ WRAITH ESP Flasher loaded with esptool-js');
-        console.log('   Protocol: ESP32 ROM Bootloader (esptool-js)');
-        console.log('   Supported: ESP32, ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C2, ESP32-H2');
-        console.log('   Multi-file flash: bootloader→0x1000, partition→0x8000, app→0x10000');
+        console.log('WRAITH ESP Flasher loaded with esptool-js');
+        console.log('Protocol: ESP32 ROM Bootloader (esptool-js)');
+        console.log('Supported: ESP32, ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C2, ESP32-H2');
     </script>
 </body>
 </html>
