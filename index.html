@@ -1044,59 +1044,56 @@
             return "";
         }
 
-        // Connect to serial port using esptool-js (fixed)
+        // ========= CONNECTION - EXACTLY FROM YOUR WORKING CODE =========
         async function connectSerial() {
             let selectedPort = null;
             try {
-                // Check WebSerial availability
-                if (!('serial' in navigator)) {
-                    addLog('❌ WebSerial not supported', 'error');
-                    return;
-                }
-
                 // Request a port
-                addLog('🔌 Requesting port...', 'info');
                 selectedPort = await navigator.serial.requestPort();
-                addLog('✅ Port selected', 'success');
+                addLog('Port selected', 'info');
 
-                // Create transport and ESPLoader
+                // Create transport and ESPLoader - EXACT match to working code
                 transport = new Transport(selectedPort);
                 esploader = new ESPLoader({
                     transport: transport,
-                    baudrate: parseInt(baudSelect.value),
-                    romBaudrate: parseInt(baudSelect.value),
-                    enableTracing: false
+                    baudrate: 115200,
+                    romBaudrate: 115200,
+                    enableTracing: false,
                 });
 
-                addLog('🔌 Connecting to ESP32...', 'info');
+                addLog('Connecting to chip…', 'info');
                 updateStatus('flashing', '● connecting...');
 
-                // Connect and initialize - this is the key fix
+                // This is the key - just main() like your working code
                 await esploader.main();
-                
-                // Get flash ID to confirm connection
-                await esploader.flashId();
                 
                 isConnected = true;
                 port = selectedPort;
                 connectBtn.textContent = '🔌 Disconnect';
                 connectBtn.classList.add('connected');
                 updateStatus('ready', '● connected');
-                addLog('✅ Connected to device', 'success');
+                addLog('Connected to device', 'success');
 
-                // Get chip info
+                // Get chip info - same as working code
                 try {
-                    const chipFamily = esploader.chip.CHIP_NAME || 'ESP32';
-                    const flashSizeBytes = await esploader.flashSizeBytes();
-                    const flashSizeMB = (flashSizeBytes / (1024 * 1024)).toFixed(1);
-                    
-                    deviceInfo.classList.add('active');
+                    const chipFamily = esploader.chip.CHIP_NAME || 'ESP';
                     document.getElementById('chipType').textContent = chipFamily;
-                    document.getElementById('flashSize').textContent = flashSizeMB + ' MB';
+                    
+                    // Try to get flash size
+                    try {
+                        await esploader.detectFlashSize();
+                        const sizeBytes = await esploader.flashSizeBytes();
+                        const sizeMb = (sizeBytes / (1024 * 1024)).toFixed(1);
+                        document.getElementById('flashSize').textContent = sizeMb + ' MB';
+                    } catch (e) {
+                        document.getElementById('flashSize').textContent = 'detect';
+                    }
+                    
                     document.getElementById('flashMode').textContent = 'DIO';
                     document.getElementById('crystalFreq').textContent = '40MHz';
                     
-                    addLog(`✅ Detected ${chipFamily} (Flash: ${flashSizeMB} MB)`, 'success');
+                    deviceInfo.classList.add('active');
+                    addLog(`✅ Detected ${chipFamily}`, 'success');
                     updateStatus('ready', '● ready');
                 } catch (error) {
                     addLog(`⚠️ Detection warning: ${error.message}`, 'warning');
@@ -1119,7 +1116,7 @@
                 transport = null;
                 esploader = null;
                 
-                // Try to clean up
+                // Clean up
                 try {
                     if (selectedPort && selectedPort.readable) {
                         await selectedPort.close();
@@ -1300,7 +1297,6 @@
                 const f = fileInput.files && fileInput.files[0];
                 label.textContent = f ? f.name : 'Choose .bin';
                 label.classList.toggle('has-file', !!f);
-                // Update entries
                 updateMultiFileEntries();
             });
             
@@ -1361,7 +1357,7 @@
             const flashMode = 'keep';
             const flashFreq = 'keep';
             
-            setStatus('flashing', '● flashing...');
+            updateStatus('flashing', '● flashing...');
             updateProgress(2);
             addLog(`📦 Starting multi-file flash (${entries.length} file(s))...`, 'info');
             
