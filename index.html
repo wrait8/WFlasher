@@ -601,6 +601,97 @@
             min-width: 20px;
         }
 
+        /* Multi-file styles */
+        .multi-file-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .multi-file-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 8px 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .multi-file-row .file-label {
+            min-width: 120px;
+            font-size: 12px;
+            color: rgba(200, 210, 215, 0.4);
+            cursor: pointer;
+        }
+
+        .multi-file-row .file-label.has-file {
+            color: #6effe0;
+        }
+
+        .multi-file-row input[type="file"] {
+            width: 0;
+            height: 0;
+            opacity: 0;
+            position: absolute;
+        }
+
+        .multi-file-row .addr-input {
+            width: 90px;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            padding: 6px 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #f0f5f5;
+            outline: none;
+        }
+
+        .multi-file-row .addr-input:focus {
+            border-color: rgba(110, 255, 224, 0.2);
+        }
+
+        .multi-file-row .remove-row {
+            min-height: 32px;
+            padding: 7px 10px;
+            font-size: 11px;
+            background: rgba(255, 100, 100, 0.05);
+            border: 1px solid rgba(255, 100, 100, 0.1);
+            color: #ff6b6b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .multi-file-row .remove-row:hover {
+            background: rgba(255, 100, 100, 0.1);
+        }
+
+        .btn-small {
+            padding: 7px 12px;
+            min-height: 32px;
+            font-size: 12px;
+            border-radius: 10px;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         @media (max-width: 700px) {
             .header {
                 padding: 1rem 1.2rem;
@@ -647,6 +738,13 @@
             }
             .btn-row {
                 flex-direction: column;
+            }
+            .multi-file-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .multi-file-row .addr-input {
+                width: 100%;
             }
         }
 
@@ -767,6 +865,19 @@
                     </div>
                 </div>
 
+                <!-- Multi-file flash section -->
+                <div class="form-group">
+                    <label style="margin-bottom:0.8rem;">multi-file flash (bootloader + partition + app)</label>
+                    <div id="multiFileContainer" class="multi-file-container"></div>
+                    <div style="display:flex; gap:0.8rem; margin-top:0.8rem; flex-wrap:wrap;">
+                        <button id="addMultiFileBtn" class="btn-secondary btn-small">+ Add file + address</button>
+                        <button id="flashAllMultiBtn" class="btn-secondary btn-small">📦 Flash all</button>
+                    </div>
+                    <div style="font-size:0.7rem; color:rgba(200,210,215,0.3); margin-top:0.5rem;">
+                        Standard addresses: bootloader → 0x1000, partition → 0x8000, app → 0x10000
+                    </div>
+                </div>
+
                 <div class="progress-section" id="progressSection">
                     <div class="progress-bar-wrapper">
                         <div class="progress-bar-fill" id="progressFill"></div>
@@ -821,6 +932,9 @@
         const logOutput = document.getElementById('logOutput');
         const deviceInfo = document.getElementById('deviceInfo');
         const browserWarning = document.getElementById('browserWarning');
+        const multiFileContainer = document.getElementById('multiFileContainer');
+        const addMultiFileBtn = document.getElementById('addMultiFileBtn');
+        const flashAllMultiBtn = document.getElementById('flashAllMultiBtn');
 
         let selectedFile = null;
         let isFlashing = false;
@@ -828,6 +942,7 @@
         let transport = null;
         let port = null;
         let isConnected = false;
+        let multiFileEntries = [];
 
         // Check if Web Serial API is supported
         if (!('serial' in navigator)) {
@@ -901,14 +1016,51 @@
             eraseBtn.disabled = !isConnected || isFlashing;
         }
 
-        // Connect to serial port using esptool-js
-        async function connectSerial() {
+        // Format error helper
+        function formatError(err) {
             try {
+                if (!err) return "Unknown error";
+                if (typeof err === "string") return err;
+                const name = err.name || err.constructor?.name || "Error";
+                const msg = err.message || String(err);
+                return name + (msg && msg !== name ? ": " + msg : "");
+            } catch (_) {
+                return "Unknown error";
+            }
+        }
+
+        // Hint for common errors
+        function hintForError(err) {
+            const name = err?.name || "";
+            const msg = (err?.message || "").toLowerCase();
+
+            if (name === "NotFoundError") return "No port selected (the chooser was closed).";
+            if (name === "NotAllowedError") return "Permission denied. Click the address-bar serial icon to manage permissions and try again.";
+            if (name === "SecurityError") return "WebSerial requires HTTPS or http://localhost (file:// won't work).";
+            if (name === "InvalidStateError") return "Port is already open. Close the serial console or any other app using the COM port and retry.";
+            if (msg.includes("timed out") || msg.includes("timeout")) {
+                return "Timeout talking to the bootloader. Try holding BOOT while clicking Connect, or press RESET when prompted.";
+            }
+            return "";
+        }
+
+        // Connect to serial port using esptool-js (fixed)
+        async function connectSerial() {
+            let selectedPort = null;
+            try {
+                // Check WebSerial availability
+                if (!('serial' in navigator)) {
+                    addLog('❌ WebSerial not supported', 'error');
+                    return;
+                }
+
                 // Request a port
-                port = await navigator.serial.requestPort();
-                
+                addLog('🔌 Requesting port...', 'info');
+                selectedPort = await navigator.serial.requestPort();
+                addLog('✅ Port selected', 'success');
+
                 // Create transport and ESPLoader
-                transport = new Transport(port);
+                transport = new Transport(selectedPort);
                 esploader = new ESPLoader({
                     transport: transport,
                     baudrate: parseInt(baudSelect.value),
@@ -919,10 +1071,14 @@
                 addLog('🔌 Connecting to ESP32...', 'info');
                 updateStatus('flashing', '● connecting...');
 
-                // Connect and initialize
+                // Connect and initialize - this is the key fix
                 await esploader.main();
                 
+                // Get flash ID to confirm connection
+                await esploader.flashId();
+                
                 isConnected = true;
+                port = selectedPort;
                 connectBtn.textContent = '🔌 Disconnect';
                 connectBtn.classList.add('connected');
                 updateStatus('ready', '● connected');
@@ -930,7 +1086,6 @@
 
                 // Get chip info
                 try {
-                    await esploader.flashId();
                     const chipFamily = esploader.chip.CHIP_NAME || 'ESP32';
                     const flashSizeBytes = await esploader.flashSizeBytes();
                     const flashSizeMB = (flashSizeBytes / (1024 * 1024)).toFixed(1);
@@ -952,7 +1107,10 @@
 
             } catch (error) {
                 console.error('Connection error:', error);
-                addLog(`❌ Failed to connect: ${error.message}`, 'error');
+                const msg = formatError(error);
+                const hint = hintForError(error);
+                addLog(`❌ Failed to connect: ${msg}`, 'error');
+                if (hint) addLog(`💡 ${hint}`, 'warning');
                 updateStatus('error', '● error');
                 isConnected = false;
                 connectBtn.textContent = '🔌 Connect';
@@ -960,6 +1118,13 @@
                 port = null;
                 transport = null;
                 esploader = null;
+                
+                // Try to clean up
+                try {
+                    if (selectedPort && selectedPort.readable) {
+                        await selectedPort.close();
+                    }
+                } catch (_) {}
             }
         }
 
@@ -1042,7 +1207,7 @@
                     reportProgress: (fileIndex, written, total) => {
                         const percent = Math.floor((written / total) * 100);
                         updateProgress(percent);
-                        if (percent % 10 === 0) {
+                        if (percent % 10 === 0 && percent > 0) {
                             addLog(`📊 Progress: ${percent}%`, 'info');
                         }
                     }
@@ -1061,7 +1226,8 @@
                 updateStatus('success', '✓ success');
 
             } catch (error) {
-                addLog(`❌ Flash error: ${error.message}`, 'error');
+                const msg = formatError(error);
+                addLog(`❌ Flash error: ${msg}`, 'error');
                 updateStatus('error', '● error');
             } finally {
                 isFlashing = false;
@@ -1099,7 +1265,8 @@
                 updateStatus('success', '✓ erased');
 
             } catch (error) {
-                addLog(`❌ Erase error: ${error.message}`, 'error');
+                const msg = formatError(error);
+                addLog(`❌ Erase error: ${msg}`, 'error');
                 updateStatus('error', '● error');
             } finally {
                 isFlashing = false;
@@ -1107,6 +1274,203 @@
                 checkReady();
             }
         }
+
+        // ========= MULTI-FILE FLASH =========
+        const MULTI_FILE_DEFAULTS = ['0x1000', '0x8000', '0x10000'];
+
+        function addMultiFileRow(defaultAddress) {
+            if (!multiFileContainer) return;
+            const row = document.createElement('div');
+            row.className = 'multi-file-row';
+            const fileId = 'multiFile_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.bin';
+            fileInput.id = fileId;
+            fileInput.className = 'multi-file-input';
+            
+            const label = document.createElement('span');
+            label.className = 'file-label';
+            label.textContent = 'Choose .bin';
+            label.htmlFor = fileId;
+            label.title = 'Click to select file';
+            
+            fileInput.addEventListener('change', () => {
+                const f = fileInput.files && fileInput.files[0];
+                label.textContent = f ? f.name : 'Choose .bin';
+                label.classList.toggle('has-file', !!f);
+                // Update entries
+                updateMultiFileEntries();
+            });
+            
+            const addrInput = document.createElement('input');
+            addrInput.type = 'text';
+            addrInput.className = 'addr-input';
+            addrInput.placeholder = '0x0';
+            addrInput.value = defaultAddress || '0x10000';
+            addrInput.title = 'Flash address (hex)';
+            addrInput.addEventListener('change', updateMultiFileEntries);
+            addrInput.addEventListener('input', updateMultiFileEntries);
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-row';
+            removeBtn.textContent = '✕';
+            removeBtn.addEventListener('click', () => {
+                row.remove();
+                updateMultiFileEntries();
+            });
+            
+            row.appendChild(fileInput);
+            row.appendChild(label);
+            row.appendChild(addrInput);
+            row.appendChild(removeBtn);
+            multiFileContainer.appendChild(row);
+            updateMultiFileEntries();
+        }
+
+        function updateMultiFileEntries() {
+            const rows = multiFileContainer.querySelectorAll('.multi-file-row');
+            multiFileEntries = [];
+            rows.forEach((row) => {
+                const fileInput = row.querySelector('.multi-file-input');
+                const addrInput = row.querySelector('.addr-input');
+                const file = fileInput?.files && fileInput.files[0];
+                if (file && addrInput) {
+                    const address = parseInt(addrInput.value, 16);
+                    if (!isNaN(address)) {
+                        multiFileEntries.push({ file, address });
+                    }
+                }
+            });
+        }
+
+        addMultiFileBtn?.addEventListener('click', () => {
+            const rows = multiFileContainer?.querySelectorAll('.multi-file-row') || [];
+            const nextDefault = MULTI_FILE_DEFAULTS[rows.length] || '0x10000';
+            addMultiFileRow(nextDefault);
+        });
+
+        async function writeMultipleBins(entries) {
+            if (!isConnected || !esploader) {
+                throw new Error('Device not connected. Click Connect first.');
+            }
+            
+            const flashSize = 'keep';
+            const flashMode = 'keep';
+            const flashFreq = 'keep';
+            
+            setStatus('flashing', '● flashing...');
+            updateProgress(2);
+            addLog(`📦 Starting multi-file flash (${entries.length} file(s))...`, 'info');
+            
+            const sorted = [...entries].sort((a, b) => a.address - b.address);
+            const fileArray = [];
+            
+            for (let i = 0; i < sorted.length; i++) {
+                const { file, address } = sorted[i];
+                const buffer = await file.arrayBuffer();
+                const uint8 = new Uint8Array(buffer);
+                let binStr = '';
+                for (let j = 0; j < uint8.length; j++) {
+                    binStr += String.fromCharCode(uint8[j]);
+                }
+                fileArray.push({ data: binStr, address });
+                addLog(`  [${i}] 0x${address.toString(16)} (${file.name})`, 'info');
+            }
+            
+            try {
+                await esploader.writeFlash({
+                    fileArray,
+                    flashSize,
+                    flashMode,
+                    flashFreq,
+                    eraseAll: false,
+                    compress: true,
+                    reportProgress: (fileIndex, written, total) => {
+                        const pct = Math.floor((written / total) * 100);
+                        updateProgress(pct);
+                        if (pct % 10 === 0 && pct > 0) {
+                            addLog(`📊 Progress: ${pct}%`, 'info');
+                        }
+                    }
+                });
+                
+                updateProgress(100);
+                addLog('✅ Multi-file flash completed successfully!', 'success');
+                updateStatus('success', '✓ success');
+                
+                try {
+                    await esploader.after('hard_reset');
+                } catch (e) {}
+                
+            } catch (error) {
+                const msg = formatError(error);
+                addLog(`❌ Multi-file flash error: ${msg}`, 'error');
+                updateStatus('error', '● error');
+                throw error;
+            }
+        }
+
+        flashAllMultiBtn?.addEventListener('click', async () => {
+            const entries = [];
+            const rows = multiFileContainer.querySelectorAll('.multi-file-row');
+            
+            rows.forEach((row) => {
+                const fileInput = row.querySelector('.multi-file-input');
+                const addrInput = row.querySelector('.addr-input');
+                const file = fileInput?.files && fileInput.files[0];
+                if (file && addrInput) {
+                    const address = parseInt(addrInput.value, 16);
+                    if (!isNaN(address)) {
+                        entries.push({ file, address });
+                    }
+                }
+            });
+            
+            if (entries.length === 0) {
+                alert('Add at least one file with "Add file + address", then choose a .bin file.');
+                return;
+            }
+            
+            // Check all rows have files
+            const missing = entries.filter((e) => !e.file);
+            if (missing.length > 0) {
+                alert('Each row must have a .bin file selected.');
+                return;
+            }
+            
+            if (!isConnected) {
+                alert('Please connect to your ESP32 first.');
+                return;
+            }
+            
+            const confirmMsg = `Flash ${entries.length} file(s):\n\n` +
+                entries.map((e, i) => `  ${i+1}. 0x${e.address.toString(16)}  ${e.file.name}`).join('\n') +
+                '\n\nProceed?';
+            
+            if (!confirm(confirmMsg)) return;
+            
+            try {
+                isFlashing = true;
+                flashBtn.disabled = true;
+                eraseBtn.disabled = true;
+                flashAllMultiBtn.disabled = true;
+                clearLog();
+                
+                await writeMultipleBins(entries);
+                
+            } catch (error) {
+                // Error already logged
+            } finally {
+                isFlashing = false;
+                flashBtn.disabled = false;
+                eraseBtn.disabled = false;
+                flashAllMultiBtn.disabled = false;
+                checkReady();
+            }
+        });
 
         // Event listeners
         flashBtn.addEventListener('click', flashESP32);
@@ -1152,16 +1516,23 @@
             }
         });
 
+        // Initialize with 3 default rows
+        addMultiFileRow('0x1000');
+        addMultiFileRow('0x8000');
+        addMultiFileRow('0x10000');
+
         // Initial status
         updateStatus('disconnected', '● disconnected');
         addLog('⚡ WRAITH ESP Flasher ready', 'info');
         addLog('📌 Hold BOOT button on ESP32 before connecting', 'warning');
         addLog('🔌 Click Connect and select your device', 'info');
         addLog('📁 Select a .bin firmware file to flash', 'info');
+        addLog('📦 Or use multi-file flash for bootloader + partition + app', 'info');
 
         console.log('⚡ WRAITH ESP Flasher loaded with esptool-js');
         console.log('   Protocol: ESP32 ROM Bootloader (esptool-js)');
         console.log('   Supported: ESP32, ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C2, ESP32-H2');
+        console.log('   Multi-file flash: bootloader→0x1000, partition→0x8000, app→0x10000');
     </script>
 </body>
 </html>
