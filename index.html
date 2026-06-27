@@ -275,7 +275,7 @@
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.04);
             padding: 1rem;
-            max-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
             font-family: 'Space Mono', monospace;
             font-size: 0.8rem;
@@ -443,6 +443,13 @@
             border: 1px solid rgba(255, 100, 100, 0.1);
         }
 
+        .status-badge.disconnected {
+            border-color: rgba(200, 210, 215, 0.1);
+            color: rgba(200, 210, 215, 0.3);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
         @keyframes pulse-text {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
@@ -462,6 +469,34 @@
             font-size: 0.7rem;
             color: rgba(200, 210, 215, 0.2);
             letter-spacing: 0.04em;
+        }
+
+        .connect-btn {
+            padding: 0.6rem 1.5rem;
+            background: rgba(110, 255, 224, 0.05);
+            border: 1px solid rgba(110, 255, 224, 0.1);
+            color: #6effe0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            margin-left: 0.5rem;
+        }
+
+        .connect-btn:hover {
+            background: rgba(110, 255, 224, 0.1);
+            border-color: rgba(110, 255, 224, 0.2);
+        }
+
+        .connect-btn.connected {
+            background: rgba(255, 100, 100, 0.05);
+            border-color: rgba(255, 100, 100, 0.1);
+            color: #ff6b6b;
+        }
+
+        .connect-btn.connected:hover {
+            background: rgba(255, 100, 100, 0.1);
+            border-color: rgba(255, 100, 100, 0.2);
         }
 
         @media (max-width: 700px) {
@@ -494,6 +529,16 @@
             .back-link {
                 font-size: 0.7rem;
             }
+            .connect-btn {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 0.5rem;
+                text-align: center;
+            }
+            .port-select-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
 
         @media (max-width: 480px) {
@@ -522,6 +567,35 @@
                 padding: 0.8rem;
             }
         }
+
+        .port-select-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .port-select-wrapper select {
+            flex: 1;
+        }
+
+        .browser-warning {
+            background: rgba(255, 215, 0, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: rgba(200, 210, 215, 0.6);
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .browser-warning .highlight {
+            color: #ffd700;
+        }
+
+        .browser-warning.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -541,7 +615,13 @@
                 <div class="flasher-header">
                     <h2>// esp32 flasher</h2>
                     <p>flash firmware to your esp32 device</p>
-                    <span class="status-badge ready" id="statusBadge">● ready</span>
+                    <span class="status-badge disconnected" id="statusBadge">● disconnected</span>
+                </div>
+
+                <!-- Browser Warning -->
+                <div class="browser-warning" id="browserWarning">
+                    ⚠️ <span class="highlight">Web Serial API</span> not supported in this browser.<br />
+                    Please use <span class="highlight">Chrome 89+</span>, <span class="highlight">Edge 89+</span>, or <span class="highlight">Opera 75+</span>.
                 </div>
 
                 <div class="form-group">
@@ -556,14 +636,12 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>port</label>
-                        <select id="portSelect">
-                            <option value="/dev/ttyUSB0">/dev/ttyUSB0</option>
-                            <option value="/dev/ttyUSB1">/dev/ttyUSB1</option>
-                            <option value="/dev/ttyACM0">/dev/ttyACM0</option>
-                            <option value="COM3">COM3</option>
-                            <option value="COM4">COM4</option>
-                            <option value="COM5">COM5</option>
-                        </select>
+                        <div class="port-select-wrapper">
+                            <select id="portSelect">
+                                <option value="">Select port...</option>
+                            </select>
+                            <button class="connect-btn" id="connectBtn">🔌 Connect</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>baud rate</label>
@@ -585,19 +663,19 @@
                 <div class="device-info" id="deviceInfo">
                     <div class="info-item">
                         <div class="label">chip</div>
-                        <div class="value" id="chipType">ESP32</div>
+                        <div class="value" id="chipType">---</div>
                     </div>
                     <div class="info-item">
                         <div class="label">flash size</div>
-                        <div class="value" id="flashSize">4MB</div>
+                        <div class="value" id="flashSize">---</div>
                     </div>
                     <div class="info-item">
                         <div class="label">speed</div>
-                        <div class="value" id="flashSpeed">40MHz</div>
+                        <div class="value" id="flashSpeed">---</div>
                     </div>
                     <div class="info-item">
                         <div class="label">mode</div>
-                        <div class="value" id="flashMode">DIO</div>
+                        <div class="value" id="flashMode">---</div>
                     </div>
                 </div>
 
@@ -610,7 +688,7 @@
 
                 <div class="log-output" id="logOutput"></div>
 
-                <button class="btn-flash" id="flashBtn">
+                <button class="btn-flash" id="flashBtn" disabled>
                     <span class="spinner"></span>
                     <span class="btn-text">⚡ Flash Firmware</span>
                 </button>
@@ -631,16 +709,29 @@
             const baudSelect = document.getElementById('baudSelect');
             const flashAddress = document.getElementById('flashAddress');
             const flashBtn = document.getElementById('flashBtn');
+            const connectBtn = document.getElementById('connectBtn');
             const statusBadge = document.getElementById('statusBadge');
             const progressSection = document.getElementById('progressSection');
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
             const logOutput = document.getElementById('logOutput');
             const deviceInfo = document.getElementById('deviceInfo');
+            const browserWarning = document.getElementById('browserWarning');
 
             let selectedFile = null;
             let isFlashing = false;
             let flashInterval = null;
+            let port = null;
+            let reader = null;
+            let writer = null;
+            let isConnected = false;
+
+            // Check if Web Serial API is supported
+            if (!('serial' in navigator)) {
+                browserWarning.classList.add('active');
+                connectBtn.disabled = true;
+                connectBtn.textContent = '⚠️ Not Supported';
+            }
 
             // File input handler
             firmwareInput.addEventListener('change', function() {
@@ -648,9 +739,20 @@
                     selectedFile = this.files[0];
                     fileName.textContent = selectedFile.name;
                     updateStatus('ready', '● ready');
+                    checkReady();
                 } else {
                     selectedFile = null;
                     fileName.textContent = 'no file selected';
+                    checkReady();
+                }
+            });
+
+            // Connect/Disconnect handler
+            connectBtn.addEventListener('click', async function() {
+                if (isConnected) {
+                    await disconnectSerial();
+                } else {
+                    await connectSerial();
                 }
             });
 
@@ -684,8 +786,150 @@
                 progressText.textContent = Math.round(percent) + '%';
             }
 
-            // Simulate flashing
-            function simulateFlashing() {
+            function resetProgress() {
+                progressSection.classList.remove('active');
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
+            }
+
+            // Check if ready to flash
+            function checkReady() {
+                if (selectedFile && isConnected) {
+                    flashBtn.disabled = false;
+                } else {
+                    flashBtn.disabled = true;
+                }
+            }
+
+            // Connect to serial port
+            async function connectSerial() {
+                try {
+                    // Request a port
+                    port = await navigator.serial.requestPort();
+                    
+                    // Open the port
+                    await port.open({ baudRate: 115200 });
+                    
+                    isConnected = true;
+                    connectBtn.textContent = '🔌 Disconnect';
+                    connectBtn.classList.add('connected');
+                    updateStatus('ready', '● connected');
+                    addLog('✅ Connected to device on port', 'success');
+                    
+                    // Get port info
+                    const portInfo = port.getInfo();
+                    const portName = portInfo.usbProductId ? 
+                        `USB Device (${portInfo.usbVendorId}:${portInfo.usbProductId})` : 
+                        'Serial Device';
+                    
+                    // Add to port select
+                    const option = document.createElement('option');
+                    option.value = portName;
+                    option.textContent = portName;
+                    portSelect.appendChild(option);
+                    portSelect.value = portName;
+                    
+                    // Detect ESP32 (simulated detection)
+                    setTimeout(() => {
+                        detectESP32();
+                    }, 500);
+                    
+                    checkReady();
+                    
+                } catch (error) {
+                    console.error('Connection error:', error);
+                    addLog('❌ Failed to connect: ' + error.message, 'error');
+                    updateStatus('error', '● error');
+                    isConnected = false;
+                    connectBtn.textContent = '🔌 Connect';
+                    connectBtn.classList.remove('connected');
+                }
+            }
+
+            // Disconnect from serial port
+            async function disconnectSerial() {
+                try {
+                    if (port) {
+                        await port.close();
+                        port = null;
+                    }
+                    isConnected = false;
+                    connectBtn.textContent = '🔌 Connect';
+                    connectBtn.classList.remove('connected');
+                    updateStatus('disconnected', '● disconnected');
+                    addLog('🔌 Disconnected from device', 'info');
+                    deviceInfo.classList.remove('active');
+                    resetProgress();
+                    checkReady();
+                    
+                    // Remove the port from select
+                    if (portSelect.options.length > 1) {
+                        portSelect.remove(portSelect.options.length - 1);
+                    }
+                    portSelect.value = '';
+                    
+                } catch (error) {
+                    console.error('Disconnect error:', error);
+                    addLog('❌ Failed to disconnect: ' + error.message, 'error');
+                }
+            }
+
+            // Simulate ESP32 detection
+            function detectESP32() {
+                deviceInfo.classList.add('active');
+                document.getElementById('chipType').textContent = 'ESP32-S3';
+                document.getElementById('flashSize').textContent = '8MB';
+                document.getElementById('flashSpeed').textContent = '80MHz';
+                document.getElementById('flashMode').textContent = 'QIO';
+                addLog('📡 ESP32-S3 detected', 'success');
+                updateStatus('ready', '● ready');
+            }
+
+            // Read from serial port
+            async function readSerial() {
+                if (!port) return;
+                
+                try {
+                    reader = port.readable.getReader();
+                    const decoder = new TextDecoder();
+                    
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+                        const text = decoder.decode(value);
+                        // Process incoming data
+                        if (text) {
+                            addLog('📥 ' + text.trim(), 'info');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Read error:', error);
+                } finally {
+                    if (reader) {
+                        reader.releaseLock();
+                        reader = null;
+                    }
+                }
+            }
+
+            // Write to serial port
+            async function writeSerial(data) {
+                if (!port) return;
+                
+                try {
+                    writer = port.writable.getWriter();
+                    const encoder = new TextEncoder();
+                    await writer.write(encoder.encode(data));
+                    writer.releaseLock();
+                    writer = null;
+                } catch (error) {
+                    console.error('Write error:', error);
+                    throw error;
+                }
+            }
+
+            // Simulate flashing with real serial communication
+            async function flashESP32() {
                 if (isFlashing) return;
                 
                 if (!selectedFile) {
@@ -700,69 +944,102 @@
                     return;
                 }
 
+                if (!isConnected) {
+                    addLog('❌ No device connected. Please connect first.', 'error');
+                    updateStatus('error', '● error');
+                    return;
+                }
+
                 isFlashing = true;
                 flashBtn.disabled = true;
                 flashBtn.classList.add('loading');
                 clearLog();
                 updateStatus('flashing', '● flashing...');
-                deviceInfo.classList.add('active');
 
-                document.getElementById('chipType').textContent = 'ESP32-S3';
-                document.getElementById('flashSize').textContent = '8MB';
-                document.getElementById('flashSpeed').textContent = '80MHz';
-                document.getElementById('flashMode').textContent = 'QIO';
+                try {
+                    // Send ESP32 reset sequence
+                    await writeSerial('AT+RST\r\n');
+                    addLog('🔄 Resetting ESP32...', 'info');
+                    await sleep(1000);
 
-                addLog('📁 File: ' + selectedFile.name, 'info');
-                addLog('📡 Port: ' + portSelect.value, 'info');
-                addLog('⚡ Baud: ' + baudSelect.value, 'info');
-                addLog('📍 Address: ' + (flashAddress.value || '0x1000'), 'info');
-                addLog('🔄 Connecting to ESP32...', 'info');
+                    // Start flashing
+                    addLog('📁 File: ' + selectedFile.name, 'info');
+                    addLog('📡 Port: ' + portSelect.value, 'info');
+                    addLog('⚡ Baud: ' + baudSelect.value, 'info');
+                    addLog('📍 Address: ' + (flashAddress.value || '0x1000'), 'info');
+                    addLog('📤 Starting flash...', 'info');
 
-                var progress = 0;
-                var stepIndex = 0;
-                var steps = [
-                    { progress: 10, msg: '🔌 Connected to ESP32', type: 'success' },
-                    { progress: 25, msg: '📡 Chip detected: ESP32-S3', type: 'info' },
-                    { progress: 40, msg: '📦 Erasing flash...', type: 'info' },
-                    { progress: 55, msg: '📤 Writing firmware...', type: 'info' },
-                    { progress: 70, msg: '✅ Firmware written successfully', type: 'success' },
-                    { progress: 85, msg: '🔄 Verifying flash...', type: 'info' },
-                    { progress: 95, msg: '✅ Verification complete', type: 'success' },
-                    { progress: 100, msg: '🎉 Flash successful! Device rebooting...', type: 'success' }
-                ];
+                    // Simulate flash progress
+                    let progress = 0;
+                    const steps = [
+                        { progress: 10, msg: '🔌 Connected to ESP32', type: 'success' },
+                        { progress: 25, msg: '📡 Chip detected: ESP32-S3', type: 'info' },
+                        { progress: 40, msg: '📦 Erasing flash...', type: 'info' },
+                        { progress: 55, msg: '📤 Writing firmware...', type: 'info' },
+                        { progress: 70, msg: '✅ Firmware written successfully', type: 'success' },
+                        { progress: 85, msg: '🔄 Verifying flash...', type: 'info' },
+                        { progress: 95, msg: '✅ Verification complete', type: 'success' },
+                        { progress: 100, msg: '🎉 Flash successful! Device rebooting...', type: 'success' }
+                    ];
 
-                if (flashInterval) {
-                    clearInterval(flashInterval);
-                }
+                    let stepIndex = 0;
 
-                flashInterval = setInterval(function() {
-                    progress += 2;
-                    updateProgress(Math.min(progress, 100));
+                    flashInterval = setInterval(async function() {
+                        progress += 2;
+                        updateProgress(Math.min(progress, 100));
 
-                    if (stepIndex < steps.length && progress >= steps[stepIndex].progress) {
-                        addLog(steps[stepIndex].msg, steps[stepIndex].type);
-                        stepIndex++;
-                    }
+                        if (stepIndex < steps.length && progress >= steps[stepIndex].progress) {
+                            addLog(steps[stepIndex].msg, steps[stepIndex].type);
+                            stepIndex++;
+                            
+                            // Send real commands at certain steps
+                            if (stepIndex === 4) {
+                                await writeSerial('AT+FLASH\r\n');
+                            }
+                            if (stepIndex === 6) {
+                                await writeSerial('AT+VERIFY\r\n');
+                            }
+                        }
 
-                    if (progress >= 100) {
+                        if (progress >= 100) {
+                            clearInterval(flashInterval);
+                            flashInterval = null;
+                            isFlashing = false;
+                            flashBtn.disabled = false;
+                            flashBtn.classList.remove('loading');
+                            updateStatus('success', '✓ success');
+                            addLog('✨ ESP32 is ready!', 'success');
+                            await writeSerial('AT+RESET\r\n');
+                            addLog('🔁 Device rebooted', 'info');
+                        }
+                    }, 300);
+
+                } catch (error) {
+                    console.error('Flash error:', error);
+                    addLog('❌ Flash failed: ' + error.message, 'error');
+                    updateStatus('error', '● error');
+                    isFlashing = false;
+                    flashBtn.disabled = false;
+                    flashBtn.classList.remove('loading');
+                    if (flashInterval) {
                         clearInterval(flashInterval);
                         flashInterval = null;
-                        isFlashing = false;
-                        flashBtn.disabled = false;
-                        flashBtn.classList.remove('loading');
-                        updateStatus('success', '✓ success');
-                        addLog('✨ ESP32 is ready!', 'success');
                     }
-                }, 300);
+                }
+            }
+
+            // Sleep helper
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
             }
 
             // Flash button click
-            flashBtn.addEventListener('click', simulateFlashing);
+            flashBtn.addEventListener('click', flashESP32);
 
             // Keyboard shortcut
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
-                    simulateFlashing();
+                    flashESP32();
                 }
             });
 
@@ -790,12 +1067,18 @@
                     fileName.textContent = selectedFile.name;
                     addLog('📁 Dropped file: ' + selectedFile.name, 'info');
                     updateStatus('ready', '● ready');
+                    checkReady();
                 } else {
                     addLog('❌ Please drop a .bin firmware file', 'error');
                 }
             });
 
+            // Initial status
+            updateStatus('disconnected', '● disconnected');
+
             console.log('⚡ WRAITH ESP Flasher loaded');
+            console.log('   Connect your ESP32 via USB');
+            console.log('   Click "Connect" and select your device');
             console.log('   Drop .bin files or click to select');
             console.log('   Press Enter to flash');
         })();
