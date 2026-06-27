@@ -72,16 +72,9 @@
         }
 
         .header .logo-section .logo-icon {
-            width: 32px;
-            height: 32px;
+            width: 48px;
+            height: 48px;
             object-fit: contain;
-        }
-
-        .header .logo-section h1 {
-            font-family: 'Space Mono', monospace;
-            font-size: 1.3rem;
-            color: #ffffff;
-            letter-spacing: 0.04em;
         }
 
         .back-link {
@@ -621,6 +614,7 @@
             font-size: 12px;
             color: rgba(200, 210, 215, 0.4);
             cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
         }
 
         .multi-file-row .file-label.has-file {
@@ -654,6 +648,7 @@
             min-height: 32px;
             padding: 7px 10px;
             font-size: 11px;
+            font-family: 'Space Grotesk', sans-serif;
             background: rgba(255, 100, 100, 0.05);
             border: 1px solid rgba(255, 100, 100, 0.1);
             color: #ff6b6b;
@@ -670,6 +665,7 @@
             padding: 7px 12px;
             min-height: 32px;
             font-size: 12px;
+            font-family: 'Space Grotesk', sans-serif;
             border-radius: 0px;
         }
 
@@ -694,12 +690,9 @@
             .header {
                 padding: 1rem 1.2rem;
             }
-            .header .logo-section h1 {
-                font-size: 1rem;
-            }
             .header .logo-section .logo-icon {
-                width: 28px;
-                height: 28px;
+                width: 40px;
+                height: 40px;
             }
             .flasher-section {
                 padding: 1.5rem 1.2rem 3rem 1.2rem;
@@ -738,11 +731,8 @@
 
         @media (max-width: 480px) {
             .header .logo-section .logo-icon {
-                width: 24px;
-                height: 24px;
-            }
-            .header .logo-section h1 {
-                font-size: 0.9rem;
+                width: 32px;
+                height: 32px;
             }
             .flasher-container {
                 padding: 1.2rem;
@@ -772,9 +762,8 @@
         <header class="header">
             <div class="logo-section">
                 <img src="https://wrait8.github.io/Images/wraith.png" alt="WRAITH" class="logo-icon" />
-                <h1>WRAITH · flasher</h1>
             </div>
-            <a href="index.html" class="back-link">← back</a>
+            <a href="https://wrait8.github.io/" class="back-link">more tools</a>
         </header>
 
         <section class="flasher-section">
@@ -1044,7 +1033,7 @@
                 const originalConsoleLog = console.log;
                 console.log = function(...args) {
                     const msg = args.join(' ');
-                    if (msg.includes('ESP-ROM') || msg.includes('rst:') || msg.includes('ets')) {
+                    if (msg.includes('ESP-ROM') || msg.includes('rst:') || msg.includes('ets') || msg.includes('boot:') || msg.includes('load:')) {
                         addRawLog(msg);
                     }
                     originalConsoleLog.apply(console, args);
