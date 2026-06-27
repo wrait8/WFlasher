@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WRAITH · ESP Flasher</title>
+    <!-- Google Fonts: Space Grotesk + Space Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0c0e;
+            min-height: 100vh;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #f0f5f5;
+            overflow-x: hidden;
+        }
+
+        /* ===== FULL PAGE BACKGROUND WRAPPER ===== */
+        .page-wrapper {
+            position: relative;
+            min-height: 100vh;
+            background: #0d0f12;
+            overflow: hidden;
+        }
+
+        /* ----- BACKGROUND IMAGE: FULL PAGE ----- */
+        .page-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('Images/bg colors effect.png') center/cover no-repeat;
+            opacity: 0.5;
+            mix-blend-mode: screen;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .page-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 30% 50%, rgba(255, 255, 255, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(200, 200, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(255, 255, 255, 0.04) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        .page-wrapper::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 1;
+            backdrop-filter: blur(1px);
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .header .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .header .logo-section .logo-icon {
+            font-size: 1.8rem;
+            color: #6effe0;
+        }
+
+        .header .logo-section h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.3rem;
+            color: #ffffff;
+            letter-spacing: 0.04em;
+        }
+
+        .back-link {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: rgba(200, 210, 215, 0.4);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: #ffffff;
+        }
+
+        /* ===== FLASHER SECTION ===== */
+        .flasher-section {
+            position: relative;
+            z-index: 10;
+            padding: 3rem 2rem 5rem 2rem;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .flasher-container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(18, 18, 18, 0.92);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0px;
+            padding: 2.5rem;
+        }
+
+        .flasher-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .flasher-header h2 {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(1.8rem, 3vw, 2.5rem);
+            color: #ffffff;
+            text-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+            letter-spacing: 0.04em;
+            margin-bottom: 0.5rem;
+        }
+
+        .flasher-header p {
+            color: rgba(200, 210, 215, 0.5);
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+
+        /* ===== FORM ===== */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgba(200, 210, 215, 0.4);
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #f0f5f5;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: rgba(110, 255, 224, 0.2);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(200, 210, 215, 0.2);
+        }
+
+        .form-group select option {
+            background: #0d0f12;
+        }
+
+        .form-group .file-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .form-group .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+
+        .form-group .file-input-wrapper .file-label {
+            padding: 0.8rem 1.5rem;
+            background: rgba(110, 255, 224, 0.05);
+            border: 1px solid rgba(110, 255, 224, 0.1);
+            color: #6effe0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .form-group .file-input-wrapper .file-label:hover {
+            background: rgba(110, 255, 224, 0.1);
+            border-color: rgba(110, 255, 224, 0.2);
+        }
+
+        .form-group .file-input-wrapper .file-name {
+            color: rgba(200, 210, 215, 0.4);
+            font-size: 0.85rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* ===== PROGRESS ===== */
+        .progress-section {
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar-wrapper {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            height: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, rgba(110, 255, 224, 0.3), rgba(110, 255, 224, 0.6));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(200, 210, 215, 0.6);
+            letter-spacing: 0.06em;
+        }
+
+        /* ===== LOG OUTPUT ===== */
+        .log-output {
+            margin-top: 1.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: rgba(200, 210, 215, 0.6);
+            display: none;
+        }
+
+        .log-output.active {
+            display: block;
+        }
+
+        .log-output .log-line {
+            padding: 0.1rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .log-output .log-line .timestamp {
+            color: rgba(200, 210, 215, 0.2);
+            margin-right: 0.8rem;
+        }
+
+        .log-output .log-line.success {
+            color: #6effe0;
+        }
+
+        .log-output .log-line.error {
+            color: #ff6b6b;
+        }
+
+        .log-output .log-line.info {
+            color: rgba(200, 210, 215, 0.7);
+        }
+
+        .log-output::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .log-output::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .log-output::-webkit-scrollbar-thumb {
+            background: rgba(110, 255, 224, 0.15);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-flash {
+            width: 100%;
+            padding: 1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: rgba(110, 255, 224, 0.1);
+            border: 1px solid rgba(110, 255, 224, 0.2);
+            color: #6effe0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1.5rem;
+        }
+
+        .btn-flash:hover:not(:disabled) {
+            background: rgba(110, 255, 224, 0.2);
+            border-color: rgba(110, 255, 224, 0.4);
+            box-shadow: 0 0 30px rgba(110, 255, 224, 0.05);
+        }
+
+        .btn-flash:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-flash .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(110, 255, 224, 0.1);
+            border-top-color: #6effe0;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        .btn-flash.loading .spinner {
+            display: inline-block;
+        }
+
+        .btn-flash.loading .btn-text {
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===== DEVICE INFO ===== */
+        .device-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            display: none;
+        }
+
+        .device-info.active {
+            display: grid;
+        }
+
+        .device-info .info-item {
+            text-align: center;
+        }
+
+        .device-info .info-item .label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgba(200, 210, 215, 0.3);
+        }
+
+        .device-info .info-item .value {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            color: #6effe0;
+            margin-top: 0.2rem;
+        }
+
+        /* ===== STATUS ===== */
+        .status-badge {
+            display: inline-block;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 0.3rem 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .status-badge.ready {
+            border-color: rgba(110, 255, 224, 0.2);
+            color: #6effe0;
+            background: rgba(110, 255, 224, 0.05);
+            border: 1px solid rgba(110, 255, 224, 0.1);
+        }
+
+        .status-badge.flashing {
+            border-color: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            animation: pulse-text 1.5s infinite;
+        }
+
+        .status-badge.success {
+            border-color: rgba(110, 255, 224, 0.2);
+            color: #6effe0;
+            background: rgba(110, 255, 224, 0.05);
+            border: 1px solid rgba(110, 255, 224, 0.1);
+        }
+
+        .status-badge.error {
+            border-color: rgba(255, 100, 100, 0.2);
+            color: #ff6b6b;
+            background: rgba(255, 100, 100, 0.05);
+            border: 1px solid rgba(255, 100, 100, 0.1);
+        }
+
+        @keyframes pulse-text {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* responsive */
+        @media (max-width: 700px) {
+            .header {
+                padding: 1rem 1.2rem;
+                flex-wrap: wrap;
+                gap: 0.8rem;
+            }
+            .header .logo-section h1 {
+                font-size: 1rem;
+            }
+            .flasher-section {
+                padding: 1.5rem 1.2rem 3rem 1.2rem;
+            }
+            .flasher-container {
+                padding: 1.5rem;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            .form-group .file-input-wrapper {
+                flex-wrap: wrap;
+            }
+            .form-group .file-input-wrapper .file-label {
+                width: 100%;
+                text-align: center;
+            }
+            .device-info {
+                grid-template-columns: 1fr 1fr;
+            }
+            .back-link {
+                font-size: 0.7rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header .logo-section .logo-icon {
+                font-size: 1.4rem;
+            }
+            .header .logo-section h1 {
+                font-size: 0.9rem;
+            }
+            .flasher-container {
+                padding: 1.2rem;
+            }
+            .flasher-header h2 {
+                font-size: 1.5rem;
+            }
+            .device-info {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            .log-output {
+                font-size: 0.7rem;
+                max-height: 150px;
+            }
+            .btn-flash {
+                font-size: 1rem;
+                padding: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="page-bg"></div>
+
+        <!-- ===== HEADER ===== -->
+        <header class="header">
+            <div class="logo-section">
+                <span class="logo-icon">⚡</span>
+                <h1>WRAITH · flasher</h1>
+            </div>
+            <a href="index.html" class="back-link">← back</a>
+        </header>
+
+        <!-- ===== FLASHER SECTION ===== -->
+        <section class="flasher-section">
+            <div class="flasher-container">
+                <div class="flasher-header">
+                    <h2>// esp32 flasher</h2>
+                    <p>flash firmware to your esp32 device</p>
+                    <span class="status-badge ready" id="statusBadge">● ready</span>
+                </div>
+
+                <!-- Form -->
+                <div class="form-group">
+                    <label>firmware file (.bin)</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="firmwareFile" accept=".bin" />
+                        <label for="firmwareFile" class="file-label">Choose File</label>
+                        <span class="file-name" id="fileName">no file selected</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>port</label>
+                        <select id="portSelect">
+                            <option value="/dev/ttyUSB0">/dev/ttyUSB0</option>
+                            <option value="/dev/ttyUSB1">/dev/ttyUSB1</option>
+                            <option value="/dev/ttyACM0">/dev/ttyACM0</option>
+                            <option value="COM3">COM3</option>
+                            <option value="COM4">COM4</option>
+                            <option value="COM5">COM5</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>baud rate</label>
+                        <select id="baudSelect">
+                            <option value="115200">115200</option>
+                            <option value="460800">460800</option>
+                            <option value="921600" selected>921600</option>
+                            <option value="1500000">1500000</option>
+                            <option value="2000000">2000000</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>flash address</label>
+                    <input type="text" id="flashAddress" value="0x1000" placeholder="0x1000" />
+                </div>
+
+                <!-- Device Info -->
+                <div class="device-info" id="deviceInfo">
+                    <div class="info-item">
+                        <div class="label">chip</div>
+                        <div class="value" id="chipType">ESP32</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">flash size</div>
+                        <div class="value" id="flashSize">4MB</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">speed</div>
+                        <div class="value" id="flashSpeed">40MHz</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">mode</div>
+                        <div class="value" id="flashMode">DIO</div>
+                    </div>
+                </div>
+
+                <!-- Progress -->
+                <div class="progress-section" id="progressSection">
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" id="progressFill"></div>
+                        <span class="progress-text" id="progressText">0%</span>
+                    </div>
+                </div>
+
+                <!-- Log Output -->
+                <div class="log-output" id="logOutput"></div>
+
+                <!-- Flash Button -->
+                <button class="btn-flash" id="flashBtn">
+                    <span class="spinner"></span>
+                    <span class="btn-text">⚡ Flash Firmware</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ===== FOOTER ===== -->
+        <footer style="position:relative;z-index:10;padding:2rem;text-align:center;border-top:1px solid rgba(255,255,255,0.04);background:rgba(0,0,0,0.3);">
+            <div style="font-family:'Space Mono',monospace;font-size:0.7rem;color:rgba(200,210,215,0.2);letter-spacing:0.04em;">
+                ⚡ WRAITH · open‑source hacking tools
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // ===== DOM ELEMENTS =====
+        const firmwareInput = document.getElementById('firmwareFile');
+        const fileName = document.getElementById('fileName');
+        const portSelect = document.getElementById('portSelect');
+        const baudSelect = document.getElementById('baudSelect');
+        const flashAddress = document.getElementById('flashAddress');
+        const flashBtn = document.getElementById('flashBtn');
+        const statusBadge = document.getElementById('statusBadge');
+        const progressSection = document.getElementById('progressSection');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const logOutput = document.getElementById('logOutput');
+        const deviceInfo = document.getElementById('deviceInfo');
+
+        let selectedFile = null;
+        let isFlashing = false;
+
+        // ===== FILE INPUT =====
+        firmwareInput.addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                selectedFile = this.files[0];
+                fileName.textContent = selectedFile.name;
+                updateStatus('ready', '● ready');
+            } else {
+                selectedFile = null;
+                fileName.textContent = 'no file selected';
+            }
+        });
+
+        // ===== LOGGING =====
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logLine = document.createElement('div');
+            logLine.className = `log-line ${type}`;
+            logLine.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
+            logOutput.appendChild(logLine);
+            logOutput.scrollTop = logOutput.scrollHeight;
+            logOutput.classList.add('active');
+        }
+
+        function clearLog() {
+            logOutput.innerHTML = '';
+            logOutput.classList.remove('active');
+        }
+
+        // ===== STATUS UPDATE =====
+        function updateStatus(type, text) {
+            statusBadge.className = `status-badge ${type}`;
+            statusBadge.textContent = text;
+        }
+
+        // ===== PROGRESS UPDATE =====
+        function updateProgress(percent) {
+            progressSection.classList.add('active');
+            progressFill.style.width = `${percent}%`;
+            progressText.textContent = `${Math.round(percent)}%`;
+        }
+
+        // ===== SIMULATE FLASHING =====
+        function simulateFlashing() {
+            if (isFlashing) return;
+            
+            // Validate file
+            if (!selectedFile) {
+                addLog('❌ No firmware file selected', 'error');
+                updateStatus('error', '● error');
+                return;
+            }
+
+            if (!selectedFile.name.endsWith('.bin')) {
+                addLog('❌ Please select a .bin firmware file', 'error');
+                updateStatus('error', '● error');
+                return;
+            }
+
+            isFlashing = true;
+            flashBtn.disabled = true;
+            flashBtn.classList.add('loading');
+            clearLog();
+            updateStatus('flashing', '● flashing...');
+            deviceInfo.classList.add('active');
+
+            // Show device info (simulated)
+            document.getElementById('chipType').textContent = 'ESP32-S3';
+            document.getElementById('flashSize').textContent = '8MB';
+            document.getElementById('flashSpeed').textContent = '80MHz';
+            document.getElementById('flashMode').textContent = 'QIO';
+
+            addLog(`📁 File: ${selectedFile.name}`, 'info');
+            addLog(`📡 Port: ${portSelect.value}`, 'info');
+            addLog(`⚡ Baud: ${baudSelect.value}`, 'info');
+            addLog(`📍 Address: ${flashAddress.value || '0x1000'}`, 'info');
+            addLog('🔄 Connecting to ESP32...', 'info');
+
+            let progress = 0;
+            const steps = [
+                { progress: 10, msg: '🔌 Connected to ESP32', type: 'success' },
+                { progress: 25, msg: '📡 Chip detected: ESP32-S3', type: 'info' },
+                { progress: 40, msg: '📦 Erasing flash...', type: 'info' },
+                { progress: 55, msg: '📤 Writing firmware...', type: 'info' },
+                { progress: 70, msg: '✅ Firmware written successfully', type: 'success' },
+                { progress: 85, msg: '🔄 Verifying flash...', type: 'info' },
+                { progress: 95, msg: '✅ Verification complete', type: 'success' },
+                { progress: 100, msg: '🎉 Flash successful! Device rebooting...', type: 'success' }
+            ];
+
+            let stepIndex = 0;
+
+            const interval = setInterval(() => {
+                progress += 2;
+                
+                // Update progress bar
+                updateProgress(Math.min(progress, 100));
+
+                // Add log messages at specific progress points
+                if (stepIndex < steps.length && progress >= steps[stepIndex].progress) {
+                    addLog(steps[stepIndex].msg, steps[stepIndex].type);
+                    stepIndex++;
+                }
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    isFlashing = false;
+                    flashBtn.disabled = false;
+                    flashBtn.classList.remove('loading');
+                    updateStatus('success', '✓ success');
+                    addLog('✨ ESP32 is ready!', 'success');
+                }
+            }, 300);
+        }
+
+        // ===== FLASH BUTTON =====
+        flashBtn.addEventListener('click', simulateFlashing);
+
+        // ===== KEYBOARD SHORTCUT: Enter to flash =====
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+                simulateFlashing();
+            }
+        });
+
+        // ===== DRAG AND DROP =====
+        const container = document.querySelector('.flasher-container');
+
+        container.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'rgba(110, 255, 224, 0.3)';
+        });
+
+        container.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+        });
+
+        container.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].name.endsWith('.bin')) {
+                firmwareInput.files = files;
+                selectedFile = files[0];
+                fileName.textContent = selectedFile.name;
+                addLog(`📁 Dropped file: ${selectedFile.name}`, 'info');
+            } else {
+                addLog('❌ Please drop a .bin firmware file', 'error');
+            }
+        });
+
+        console.log('⚡ WRAITH ESP Flasher loaded');
+        console.log('   Drop .bin files or click to select');
+        console.log('   Press Enter to flash');
+    </script>
+</body>
+</html>
