@@ -427,11 +427,6 @@
             color: rgba(200, 210, 215, 0.7);
         }
 
-        .log-output .log-line.raw {
-            color: rgba(200, 210, 215, 0.4);
-            font-size: 0.7rem;
-        }
-
         .log-output::-webkit-scrollbar {
             width: 4px;
         }
@@ -956,22 +951,12 @@
             }
         });
 
-        // Logging - shows all serial responses
+        // Logging
         function addLog(message, type = 'info') {
             const timestamp = new Date().toLocaleTimeString();
             const logLine = document.createElement('div');
             logLine.className = 'log-line ' + type;
             logLine.innerHTML = '<span class="timestamp">[' + timestamp + ']</span>' + message;
-            logOutput.appendChild(logLine);
-            logOutput.scrollTop = logOutput.scrollHeight;
-            logOutput.classList.add('active');
-        }
-
-        function addRawLog(message) {
-            const timestamp = new Date().toLocaleTimeString();
-            const logLine = document.createElement('div');
-            logLine.className = 'log-line raw';
-            logLine.innerHTML = '<span class="timestamp">[' + timestamp + ']</span> ' + message;
             logOutput.appendChild(logLine);
             logOutput.scrollTop = logOutput.scrollHeight;
             logOutput.classList.add('active');
@@ -1027,33 +1012,20 @@
             try {
                 addLog('Requesting serial port...', 'info');
                 selectedPort = await navigator.serial.requestPort();
-                addLog('Port selected: ' + (selectedPort.getInfo ? JSON.stringify(selectedPort.getInfo()) : 'unknown'), 'info');
+                addLog('Port selected', 'info');
 
                 transport = new Transport(selectedPort);
                 esploader = new ESPLoader({
                     transport: transport,
                     baudrate: 115200,
                     romBaudrate: 115200,
-                    enableTracing: true,
+                    enableTracing: false,
                 });
 
                 addLog('Connecting to chip...', 'info');
                 updateStatus('flashing', 'connecting...');
 
-                // Enable logging from esptool
-                const originalConsoleLog = console.log;
-                console.log = function(...args) {
-                    const msg = args.join(' ');
-                    if (msg.includes('ESP-ROM') || msg.includes('rst:') || msg.includes('ets') || msg.includes('boot:') || msg.includes('load:')) {
-                        addRawLog(msg);
-                    }
-                    originalConsoleLog.apply(console, args);
-                };
-
                 await esploader.main();
-                
-                // Restore console.log
-                console.log = originalConsoleLog;
                 
                 isConnected = true;
                 port = selectedPort;
